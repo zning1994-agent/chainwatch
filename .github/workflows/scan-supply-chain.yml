@@ -2,8 +2,8 @@ name: 🔍 Supply Chain Security Scanner
 
 on:
   schedule:
-    # Run daily at 08:00 UTC
-    - cron: '0 8 * * *'
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *' 
   workflow_dispatch: # Allow manual trigger
   push:
     branches: [master]

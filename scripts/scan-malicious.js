@@ -45,6 +45,22 @@ const MALICIOUS_PATTERNS = [
   { pattern: /^pyte?st/i, target: "pytest", ecosystem: "pypi" },
   { pattern: /^boto?3/i, target: "boto3", ecosystem: "pypi" },
   
+  // Go typosquatting
+  { pattern: /^gin-?go/i, target: "gin-gonic/gin", ecosystem: "go" },
+  { pattern: /^echo-?lab/i, target: "labstack/echo", ecosystem: "go" },
+  { pattern: /^fiber-?go/i, target: "gofiber/fiber", ecosystem: "go" },
+  { pattern: /^gori?lla/i, target: "gorilla/mux", ecosystem: "go" },
+  { pattern: /^gorm-?io/i, target: "gorm.io/gorm", ecosystem: "go" },
+  { pattern: /^cli?rus/i, target: "spf13/cobra", ecosystem: "go" },
+
+  // Ruby typosquatting
+  { pattern: /^rails-?rb/i, target: "rails", ecosystem: "rubygems" },
+  { pattern: /^sinat?ra/i, target: "sinatra", ecosystem: "rubygems" },
+  { pattern: /^devi?se/i, target: "devise", ecosystem: "rubygems" },
+  { pattern: /^rake-?task/i, target: "rake", ecosystem: "rubygems" },
+  { pattern: /^sidek?iq/i, target: "sidekiq", ecosystem: "rubygems" },
+  { pattern: /^pg-?conn/i, target: "pg", ecosystem: "rubygems" },
+
   // Suspicious naming patterns
   { pattern: /^@corp\//, ecosystem: "npm" },
   { pattern: /^@internal\//, ecosystem: "npm" },
@@ -75,6 +91,20 @@ const POPULAR_PACKAGES = {
     "mypy", "ipython", "jupyter", "pyspark", "airflow", "pydantic", "click",
     "rich", "cryptography", "httpx", "aiohttp", "pyyaml", "loguru", "pyarrow",
     "dask", "polars", "networkx", "opencv-python", "transformers", "langchain"
+  ],
+  go: [
+    "gin", "echo", "fiber", "gorilla/mux", "gorm", "cobra", "viper",
+    "zap", "logrus", "zerolog", "chi", "httprouter", "go-chi/chi",
+    "jmoiron/sqlx", "lib/pq", "go-sql-driver/mysql", "redis/go-redis",
+    "grpc", "protobuf", "websock", "nhooyr/websocket", "fasthttp",
+    "go-resty/resty", "burrow", "ants", "semaphore", "errgroup",
+    "uber-go/automaxprocs", "uber-go/dig", "uber-go/fx"
+  ],
+  rubygems: [
+    "rails", "sinatra", "devise", "rake", "sidekiq", "pg", "mysql2",
+    "redis", "rspec", "minitest", "rubocop", "bundler", "puma",
+    "unicorn", "passenger", "doorkeeper", "jwt", "doorkeeper",
+    "activeadmin", "spree", "foreman", "lograge", "audited"
   ]
 };
 
@@ -224,6 +254,119 @@ async function scanPyPIRegistry() {
   return alerts;
 }
 
+async function scanGoRegistry() {
+  const alerts = [];
+  const seen = new Set();
+
+  process.stderr.write("🔍 Scanning Go modules registry...\n");
+
+  try {
+    const searchTerms = [
+      "gin", "echo", "fiber", "gorilla", "gorm", "cobra", "viper",
+      "zap", "logrus", "zerolog", "chi", "fasthttp"
+    ];
+
+    for (const term of searchTerms.slice(0, 6)) {
+      try {
+        const result = await fetchJSON(
+          `https://proxy.golang.org/${term}/@latest`
+        );
+        if (result && result.Version) {
+          // Check for similar names by querying pkg.go.dev search
+          const searchResult = await fetchJSON(
+            `https://proxy.golang.org/!${encodeURIComponent(term)}/@latest`
+          ).catch(() => null);
+
+          const name = term.toLowerCase();
+          const popular = POPULAR_PACKAGES.go.find(p => {
+            const pName = p.split("/").pop().toLowerCase();
+            const dist = levenshtein(name, pName);
+            return dist > 0 && dist <= 2 && dist < pName.length * 0.4;
+          });
+
+          if (popular) {
+            const pName = popular.split("/").pop().toLowerCase();
+            const dist = levenshtein(name, pName);
+            const sim = Math.round((1 - dist / Math.max(name.length, pName.length)) * 100);
+
+            if (sim > 70) {
+              alerts.push({
+                level: sim > 85 ? "HIGH" : "MEDIUM",
+                type: "typosquatting",
+                package: term,
+                ecosystem: "go",
+                message: `Similar to "${popular}" (${sim}% match, edit distance: ${dist})`,
+                version: result.Version,
+                date: new Date().toISOString()
+              });
+            }
+          }
+        }
+      } catch (err) {
+        process.stderr.write(`  ⚠️  Error scanning Go for "${term}": ${err.message}\n`);
+      }
+      await new Promise(r => setTimeout(r, 300));
+    }
+  } catch (err) {
+    process.stderr.write(`  ⚠️  Go scan error: ${err.message}\n`);
+  }
+
+  return alerts;
+}
+
+async function scanRubyGemsRegistry() {
+  const alerts = [];
+  const seen = new Set();
+
+  process.stderr.write("🔍 Scanning RubyGems registry...\n");
+
+  try {
+    const searchTerms = [
+      "rails", "sinatra", "devise", "rake", "sidekiq", "pg",
+      "rspec", "rubocop", "bundler", "puma", "doorkeeper"
+    ];
+
+    for (const term of searchTerms.slice(0, 6)) {
+      try {
+        const result = await fetchJSON(
+          `https://rubygems.org/api/v1/gems/${term}.json`
+        );
+        if (result && result.name) {
+          const name = result.name.toLowerCase();
+          const popular = POPULAR_PACKAGES.rubygems.find(p => {
+            const dist = levenshtein(name, p.toLowerCase());
+            return dist > 0 && dist <= 2 && dist < p.length * 0.4;
+          });
+
+          if (popular) {
+            const dist = levenshtein(name, popular.toLowerCase());
+            const sim = Math.round((1 - dist / Math.max(name.length, popular.length)) * 100);
+
+            if (sim > 70) {
+              alerts.push({
+                level: sim > 85 ? "HIGH" : "MEDIUM",
+                type: "typosquatting",
+                package: result.name,
+                ecosystem: "rubygems",
+                message: `Similar to "${popular}" (${sim}% match, edit distance: ${dist})`,
+                version: result.version,
+                date: new Date().toISOString()
+              });
+            }
+          }
+        }
+      } catch (err) {
+        process.stderr.write(`  ⚠️  Error scanning RubyGems for "${term}": ${err.message}\n`);
+      }
+      await new Promise(r => setTimeout(r, 300));
+    }
+  } catch (err) {
+    process.stderr.write(`  ⚠️  RubyGems scan error: ${err.message}\n`);
+  }
+
+  return alerts;
+}
+
 async function checkKnownMalicious() {
   const alerts = [];
   
@@ -250,6 +393,13 @@ async function checkKnownMalicious() {
     { name: "jeIlyfish", ecosystem: "pypi", reason: "Homoglyph attack" },
     { name: "colourama", ecosystem: "pypi", reason: "Typosquatting" },
     { name: "requesocks", ecosystem: "pypi", reason: "Data exfiltration" },
+
+    // Go malicious packages
+    { name: "github.com/nicholasgasior/fake-package", ecosystem: "go", reason: "Test/decoy package" },
+
+    // RubyGems malicious packages
+    { name: "rubgems", ecosystem: "rubygems", reason: "Typosquatting" },
+    { name: "rubygems-updater", ecosystem: "rubygems", reason: "Dependency confusion" },
   ];
   
   for (const pkg of knownMalicious) {
@@ -262,6 +412,12 @@ async function checkKnownMalicious() {
       } else if (pkg.ecosystem === "pypi") {
         const data = await fetchJSON(`https://pypi.org/pypi/${pkg.name}/json`);
         exists = !!data && !!data.info;
+      } else if (pkg.ecosystem === "go") {
+        const data = await fetchJSON(`https://proxy.golang.org/${pkg.name}/@latest`).catch(() => null);
+        exists = !!data && !!data.Version;
+      } else if (pkg.ecosystem === "rubygems") {
+        const data = await fetchJSON(`https://rubygems.org/api/v1/gems/${pkg.name}.json`).catch(() => null);
+        exists = !!data && !!data.name;
       }
       
       if (exists) {
@@ -290,14 +446,16 @@ async function main() {
   process.stderr.write("\n");
   
   // Run all scans in parallel
-  const [npmAlerts, pypiAlerts, maliciousAlerts] = await Promise.all([
+  const [npmAlerts, pypiAlerts, goAlerts, rubyAlerts, maliciousAlerts] = await Promise.all([
     scanNpmRegistry(),
     scanPyPIRegistry(),
+    scanGoRegistry(),
+    scanRubyGemsRegistry(),
     checkKnownMalicious()
   ]);
   
   // Combine and deduplicate
-  const allAlerts = [...npmAlerts, ...pypiAlerts, ...maliciousAlerts];
+  const allAlerts = [...npmAlerts, ...pypiAlerts, ...goAlerts, ...rubyAlerts, ...maliciousAlerts];
   const seen = new Set();
   const uniqueAlerts = allAlerts.filter(a => {
     const key = `${a.package}-${a.type}`;
@@ -324,7 +482,9 @@ async function main() {
     alerts: uniqueAlerts,
     ecosystems: {
       npm: npmAlerts.length,
-      pypi: pypiAlerts.length
+      pypi: pypiAlerts.length,
+      go: goAlerts.length,
+      rubygems: rubyAlerts.length
     }
   };
   
