@@ -1,0 +1,25 @@
+{
+  "name": "chainwatch",
+  "version": "1.0.0",
+  "description": "🔍 Supply chain attack detection tool - scan your dependencies for typosquatting, malicious maintainers, and known vulnerabilities",
+  "main": "src/cli.js",
+  "bin": {
+    "chainwatch": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "test": "node src/cli.js scan --help"
+  },
+  "keywords": ["supply-chain", "security", "npm", "dependencies", "typosquatting", "vulnerability", "scanner"],
+  "author": "Brain Agent <zhn038+1@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.0.0",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zning1994-agent/chainwatch"
+  }
+}
