@@ -117,7 +117,7 @@ async function scanNpmRegistry() {
   const alerts = [];
   const seen = new Set();
   
-  console.log("🔍 Scanning npm registry...");
+    process.stderr.write("🔍 Scanning npm registry...\n");
   
   // Check recent packages via npm search API
   try {
@@ -163,14 +163,14 @@ async function scanNpmRegistry() {
           }
         }
       } catch (err) {
-        console.log(`  ⚠️  Error searching npm for "${term}": ${err.message}`);
+        process.stderr.write(`  ⚠️  Error searching npm for "${term}": ${err.message}\n`);
       }
       
       // Rate limiting
       await new Promise(r => setTimeout(r, 500));
     }
   } catch (err) {
-    console.log(`  ⚠️  npm scan error: ${err.message}`);
+    process.stderr.write(`  ⚠️  npm scan error: ${err.message}\n`);
   }
   
   return alerts;
@@ -180,7 +180,7 @@ async function scanPyPIRegistry() {
   const alerts = [];
   const seen = new Set();
   
-  console.log("🔍 Scanning PyPI registry...");
+  process.stderr.write("🔍 Scanning PyPI registry...\n");
   
   try {
     // Get recent packages from PyPI
@@ -218,7 +218,7 @@ async function scanPyPIRegistry() {
       }
     }
   } catch (err) {
-    console.log(`  ⚠️  PyPI scan error: ${err.message}`);
+    process.stderr.write(`  ⚠️  PyPI scan error: ${err.message}\n`);
   }
   
   return alerts;
@@ -227,7 +227,7 @@ async function scanPyPIRegistry() {
 async function checkKnownMalicious() {
   const alerts = [];
   
-  console.log("🔍 Checking known malicious packages...");
+  process.stderr.write("🔍 Checking known malicious packages...\n");
   
   // Check against known malicious package lists
   const knownMalicious = [
@@ -284,10 +284,10 @@ async function checkKnownMalicious() {
 }
 
 async function main() {
-  console.log("🔍 ChainWatch Supply Chain Security Scanner");
-  console.log("━".repeat(50));
-  console.log(`⏰ Scan time: ${new Date().toISOString()}`);
-  console.log("");
+  process.stderr.write("🔍 ChainWatch Supply Chain Security Scanner\n");
+  process.stderr.write("━".repeat(50) + "\n");
+  process.stderr.write(`⏰ Scan time: ${new Date().toISOString()}\n`);
+  process.stderr.write("\n");
   
   // Run all scans in parallel
   const [npmAlerts, pypiAlerts, maliciousAlerts] = await Promise.all([
@@ -328,14 +328,15 @@ async function main() {
     }
   };
   
-  // Output JSON
+  // Output clean JSON (for piping to file)
   console.log(JSON.stringify(report, null, 2));
   
-  console.log("\n" + "━".repeat(50));
-  console.log(`✅ Scan complete: ${report.summary.total} alerts found`);
-  console.log(`   🔴 HIGH: ${report.summary.high}`);
-  console.log(`   🟡 MEDIUM: ${report.summary.medium}`);
-  console.log(`   🔵 LOW: ${report.summary.low}`);
+  // Also output summary to stderr (for display)
+  process.stderr.write("\n" + "━".repeat(50) + "\n");
+  process.stderr.write(`✅ Scan complete: ${report.summary.total} alerts found\n`);
+  process.stderr.write(`   🔴 HIGH: ${report.summary.high}\n`);
+  process.stderr.write(`   🟡 MEDIUM: ${report.summary.medium}\n`);
+  process.stderr.write(`   🔵 LOW: ${report.summary.low}\n`);
 }
 
 main().catch(err => {

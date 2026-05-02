@@ -32,7 +32,27 @@ jobs:
         id: scan
         run: |
           echo "Starting supply chain security scan..."
-          node scripts/scan-malicious.js > data/alerts.json
+          
+          # Run scanner and save full output
+          node scripts/scan-malicious.js 2>&1 | tee scan-output.txt
+          
+          # Extract JSON from output (skip header lines)
+          sed -n '/^{/,/^}/p' scan-output.txt > data/alerts.json
+          
+          # Verify JSON is valid
+          if ! node -e "JSON.parse(require('fs').readFileSync('data/alerts.json','utf8'))" 2>/dev/null; then
+            echo "⚠️ JSON extraction failed, using raw output"
+            # Fallback: redirect only the JSON part
+            node -e "
+              const {execSync} = require('child_process');
+              const out = execSync('node scripts/scan-malicious.js').toString();
+              const jsonStart = out.indexOf('{');
+              const jsonEnd = out.lastIndexOf('}') + 1;
+              if (jsonStart >= 0 && jsonEnd > jsonStart) {
+                require('fs').writeFileSync('data/alerts.json', out.slice(jsonStart, jsonEnd));
+              }
+            "
+          fi
           
           # Count results
           HIGH=$(node -e "const d=require('./data/alerts.json'); console.log(d.summary?.high || 0)")
