@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChainWatch — Supply Chain Security Scanner</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'SF Mono', 'Fira Code', monospace; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+    
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    
+    header { text-align: center; margin-bottom: 40px; }
+    h1 { font-size: 2.5em; color: #00d4ff; margin-bottom: 10px; }
+    h1 span { color: #ff4444; }
+    .subtitle { color: #666; font-size: 1.1em; }
+    
+    .upload-zone {
+      border: 2px dashed #333; border-radius: 12px; padding: 40px; text-align: center;
+      margin: 30px 0; cursor: pointer; transition: all 0.3s;
+    }
+    .upload-zone:hover { border-color: #00d4ff; background: rgba(0,212,255,0.05); }
+    .upload-zone.dragover { border-color: #00d4ff; background: rgba(0,212,255,0.1); }
+    .upload-icon { font-size: 3em; margin-bottom: 15px; }
+    .upload-text { color: #888; }
+    .upload-text strong { color: #00d4ff; }
+    
+    input[type="file"] { display: none; }
+    
+    .paste-zone {
+      margin: 20px 0; padding: 20px; background: #111; border-radius: 8px; border: 1px solid #222;
+    }
+    textarea {
+      width: 100%; min-height: 150px; background: #0a0a0f; color: #e0e0e0; border: 1px solid #333;
+      border-radius: 6px; padding: 12px; font-family: inherit; font-size: 0.9em; resize: vertical;
+    }
+    textarea:focus { outline: none; border-color: #00d4ff; }
+    
+    .btn {
+      display: inline-block; padding: 12px 30px; background: #00d4ff; color: #000;
+      border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer;
+      margin: 10px 5px; transition: all 0.2s;
+    }
+    .btn:hover { background: #00b8e6; transform: translateY(-1px); }
+    .btn:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+    
+    .results { margin-top: 30px; }
+    
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0;
+    }
+    .stat-card {
+      background: #111; border-radius: 8px; padding: 20px; text-align: center; border: 1px solid #222;
+    }
+    .stat-card .number { font-size: 2em; font-weight: bold; }
+    .stat-card .label { color: #666; font-size: 0.85em; margin-top: 5px; }
+    .stat-card.high .number { color: #ff4444; }
+    .stat-card.medium .number { color: #ffaa00; }
+    .stat-card.low .number { color: #4488ff; }
+    .stat-card.clean .number { color: #44ff44; }
+    
+    .risk-list { margin: 20px 0; }
+    .risk-item {
+      background: #111; border-radius: 8px; padding: 16px; margin: 10px 0;
+      border-left: 4px solid #333;
+    }
+    .risk-item.high { border-left-color: #ff4444; }
+    .risk-item.medium { border-left-color: #ffaa00; }
+    .risk-item.low { border-left-color: #4488ff; }
+    
+    .risk-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .risk-badge {
+      padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; text-transform: uppercase;
+    }
+    .risk-badge.high { background: #ff444433; color: #ff4444; }
+    .risk-badge.medium { background: #ffaa0033; color: #ffaa00; }
+    .risk-badge.low { background: #4488ff33; color: #4488ff; }
+    .risk-type { color: #888; font-size: 0.85em; }
+    .risk-package { font-weight: bold; color: #fff; }
+    .risk-message { color: #aaa; font-size: 0.9em; margin-top: 5px; }
+    .risk-details { color: #555; font-size: 0.8em; margin-top: 8px; padding: 8px; background: #0a0a0f; border-radius: 4px; }
+    
+    .loading { text-align: center; padding: 40px; color: #00d4ff; }
+    .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #333; border-top-color: #00d4ff; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    footer { text-align: center; margin-top: 60px; padding: 20px; color: #444; font-size: 0.85em; }
+    footer a { color: #00d4ff; text-decoration: none; }
+    
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔍 Chain<span>Watch</span></h1>
+      <p class="subtitle">Supply Chain Security Scanner</p>
+    </header>
+    
+    <div class="upload-zone" id="dropZone">
+      <div class="upload-icon">📦</div>
+      <p class="upload-text">Drop <strong>package.json</strong>, <strong>requirements.txt</strong>, or <strong>pyproject.toml</strong> here</p>
+      <p class="upload-text" style="margin-top:10px">or click to select file</p>
+      <input type="file" id="fileInput" accept=".json,.txt,.toml,.lock">
+    </div>
+    
+    <div class="paste-zone">
+      <p style="margin-bottom:10px; color:#888">Or paste your dependencies:</p>
+      <textarea id="pasteInput" placeholder='{"dependencies": {"lodash": "^4.17.0", "express": "^4.18.0"}}'></textarea>
+      <button class="btn" onclick="scanPasted()">Scan Pasted</button>
+    </div>
+    
+    <div id="results" class="results hidden"></div>
+    
+    <footer>
+      <p>ChainWatch v1.0.0 — <a href="https://github.com/zning1994-agent/chainwatch">GitHub</a></p>
+    </footer>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const pasteInput = document.getElementById('pasteInput');
+    const resultsDiv = document.getElementById('results');
+    
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) readFile(file);
+    });
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) readFile(e.target.files[0]);
+    });
+    
+    function readFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result;
+        parseAndScan(content, file.name);
+      };
+      reader.readAsText(file);
+    }
+    
+    function scanPasted() {
+      const content = pasteInput.value.trim();
+      if (!content) return alert('Please paste some dependencies first');
+      parseAndScan(content, 'pasted');
+    }
+    
+    function parseAndScan(content, filename) {
+      let deps = [];
+      
+      if (filename.endsWith('.json')) {
+        try {
+          const pkg = JSON.parse(content);
+          const allDeps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
+          deps = Object.entries(allDeps || {}).map(([name, version]) => ({ name, version, source: 'npm' }));
+        } catch (e) {
+          alert('Invalid JSON: ' + e.message);
+          return;
+        }
+      } else if (filename.endsWith('.txt')) {
+        deps = content.split('\n')
+          .filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('-'))
+          .map(l => {
+            const m = l.match(/^([a-zA-Z0-9_.-]+)/);
+            return m ? { name: m[1], version: '*', source: 'pypi' } : null;
+          })
+          .filter(Boolean);
+      } else {
+        alert('Unsupported file format. Use package.json or requirements.txt');
+        return;
+      }
+      
+      if (deps.length === 0) {
+        alert('No dependencies found');
+        return;
+      }
+      
+      showResults(deps, filename);
+    }
+    
+    function showResults(deps, filename) {
+      const POPULAR_NPM = ['lodash','react','axios','express','vue','angular','webpack','babel','typescript','eslint','prettier','jest','moment','commander','debug','semver','uuid','colors','dotenv','cors','body-parser','morgan','helmet','multer','socket.io','mongoose','sequelize','next','nuxt','gatsby','svelte','jquery','d3','three','redux','tailwindcss','bootstrap','storybook','cypress','playwright','puppeteer','sharp','bcrypt','jsonwebtoken','passport','winston','pino','nodemailer','twilio','stripe','eslint','vite','rollup','prisma','typeorm','knex','graphql','fastify','electron'];
+      const POPULAR_PYPI = ['requests','flask','django','numpy','pandas','scipy','matplotlib','tensorflow','torch','keras','scikit-learn','pillow','beautifulsoup4','selenium','scrapy','fastapi','uvicorn','sqlalchemy','celery','redis','pymongo','psycopg2','boto3','pytest','black','flake8','pylint','mypy','ipython','jupyter','pyspark','airflow','pydantic','click','rich','cryptography','httpx','aiohttp','pyyaml','loguru','pyarrow','dask','polars','networkx','opencv-python','transformers','langchain','openai'];
+      
+      const popular = deps[0].source === 'npm' ? POPULAR_NPM : POPULAR_PYPI;
+      const risks = [];
+      
+      for (const dep of deps) {
+        const name = dep.name.toLowerCase().replace(/[-_\.]/g, '');
+        for (const p of popular) {
+          const pNorm = p.toLowerCase().replace(/[-_\.]/g, '');
+          if (pNorm === name) continue;
+          const dist = levenshtein(name, pNorm);
+          const maxLen = Math.max(name.length, pNorm.length);
+          const sim = Math.round((1 - dist/maxLen) * 100);
+          if (dist <= 2 && dist < maxLen * 0.4) {
+            risks.push({
+              level: sim > 85 ? 'HIGH' : 'MEDIUM',
+              type: 'typosquatting',
+              package: dep.name,
+              message: `Similar to "${p}" (${sim}% match, edit distance: ${dist})`,
+              details: { similarTo: p, similarity: sim }
+            });
+          }
+        }
+      }
+      
+      const high = risks.filter(r => r.level === 'HIGH').length;
+      const medium = risks.filter(r => r.level === 'MEDIUM').length;
+      const low = risks.filter(r => r.level === 'LOW').length;
+      const clean = deps.length - risks.length;
+      
+      let html = `
+        <h2 style="color:#00d4ff;margin-bottom:20px">📊 Scan Results: ${filename}</h2>
+        <div class="stats">
+          <div class="stat-card"><div class="number">${deps.length}</div><div class="label">Total Deps</div></div>
+          <div class="stat-card high"><div class="number">${high}</div><div class="label">High Risk</div></div>
+          <div class="stat-card medium"><div class="number">${medium}</div><div class="label">Medium Risk</div></div>
+          <div class="stat-card clean"><div class="number">${clean}</div><div class="label">Clean</div></div>
+        </div>
+      `;
+      
+      if (risks.length > 0) {
+        html += '<div class="risk-list">';
+        for (const risk of risks) {
+          html += `
+            <div class="risk-item ${risk.level.toLowerCase()}">
+              <div class="risk-header">
+                <span class="risk-badge ${risk.level.toLowerCase()}">${risk.level}</span>
+                <span class="risk-type">${risk.type}</span>
+                <span class="risk-package">${risk.package}</span>
+              </div>
+              <div class="risk-message">${risk.message}</div>
+              ${risk.details ? `<div class="risk-details">${JSON.stringify(risk.details)}</div>` : ''}
+            </div>
+          `;
+        }
+        html += '</div>';
+      } else {
+        html += '<div style="text-align:center;padding:30px;color:#44ff44;font-size:1.2em">✅ All dependencies clean!</div>';
+      }
+      
+      resultsDiv.innerHTML = html;
+      resultsDiv.classList.remove('hidden');
+    }
+    
+    function levenshtein(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({length:m+1}, () => Array(n+1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++)
+        for (let j = 1; j <= n; j++)
+          dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));
+      return dp[m][n];
+    }
+  </script>
+</body>
+</html>

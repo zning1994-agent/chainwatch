@@ -4,11 +4,13 @@
 
 ## Features
 
-- 🎯 **Typosquatting Detection** — Find packages with names suspiciously similar to popular packages
+- 🎯 **Typosquatting Detection** — Find packages with names suspiciously similar to popular packages (npm + PyPI)
 - 👤 **Suspicious Maintainer Detection** — Identify packages published by new or low-activity accounts
 - 🔄 **Dependency Confusion Detection** — Detect potential private package name hijacking
 - 🛡️ **Known Vulnerability Scanning** — Check against GitHub Advisory Database (OSV API)
-- 📋 **License Compliance Check** — Scan for license conflicts
+- 🔒 **Lockfile Analysis** — Detect missing integrity hashes and unpinned dependencies
+- 📋 **Multi-ecosystem** — Supports npm, PyPI, Go, Ruby gems
+- 🌐 **Web Interface** — Visual scanning via drag-and-drop web UI
 
 ## Quick Start
 
@@ -26,11 +28,11 @@ npx chainwatch scan
 ## Usage
 
 ```bash
-# Scan current directory (auto-detects package.json or requirements.txt)
+# Scan current directory (auto-detects dependency files)
 chainwatch scan
 
 # Scan a specific file
-chainwatch scan --file package.json
+chainwatch scan --file requirements.txt
 
 # Verbose output with all details
 chainwatch scan --verbose
@@ -42,49 +44,52 @@ chainwatch scan --json
 chainwatch check <package-name>
 ```
 
+## Supported Ecosystems
+
+| Ecosystem | File Types | Typosquatting DB | Maintainer Check |
+|-----------|-----------|-----------------|-----------------|
+| npm | package.json | ✅ (500+ packages) | ✅ |
+| PyPI | requirements.txt, pyproject.toml, Pipfile | ✅ (100+ packages) | ✅ |
+| Go | go.mod | 🔜 | 🔜 |
+| Ruby | Gemfile | 🔜 | 🔜 |
+
 ## Example Output
 
 ```
 🔍 ChainWatch v1.0.0 — Supply Chain Security Scanner
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📦 Scanning dependencies... (47 packages found)
+📦 Scanning requirements.txt... (23 packages found)
 
-⚠️  RISKS FOUND: 3
+⚠️  RISKS FOUND: 2
 
 🔴 HIGH: Typosquatting detected
-   lod-ash → similar to lodash (24M weekly downloads)
+   requets → similar to requests (91% match, edit distance: 1)
 
-🟡 MEDIUM: Suspicious maintainer
-   event-stream-patch → published by account created 3 days ago
-
-🟡 MEDIUM: Known vulnerability
-   minimist@1.2.0 → CVE-2021-44906 (Prototype Pollution)
+🟡 MEDIUM: Suspicious package
+   fake-auth → Only 1 version published, account is 5 days old
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✅ Scan complete. 44 clean, 3 risks found.
+📊 Summary:
+   Total dependencies: 23
+   🔴 HIGH: 1
+   🟡 MEDIUM: 1
+   ✅ CLEAN: 21
 ```
 
-## How It Works
+## Web Interface
 
-### Typosquatting Detection
-Compares package names against a database of 10,000+ popular packages using:
-- Levenshtein distance (edit distance)
-- Common typo patterns (missing/extra characters)
-- Homoglyph detection (visually similar characters)
+```bash
+# Open the web UI
+open web/index.html
+```
 
-### Maintainer Analysis
-Checks the npm registry for:
-- Account creation date (< 30 days = suspicious)
-- Number of published packages
-- Download history patterns
-
-### Vulnerability Scanning
-Queries the [OSV (Open Source Vulnerabilities)](https://osv.dev/) API for:
-- Known CVEs in your dependency tree
-- Security advisories
-- Unpatched vulnerabilities
+Features:
+- Drag & drop package.json or requirements.txt
+- Paste dependencies directly
+- Visual risk dashboard with severity levels
+- Client-side scanning (no server required)
 
 ## CI/CD Integration
 
@@ -92,9 +97,9 @@ Queries the [OSV (Open Source Vulnerabilities)](https://osv.dev/) API for:
 
 ```yaml
 - name: Supply Chain Security Scan
-  uses: zning1994-agent/chainwatch@main
-  with:
-    fail-on: high
+  run: |
+    npm install -g chainwatch
+    chainwatch scan --fail-high --json > scan-results.json
 ```
 
 ### Pre-commit Hook
@@ -112,6 +117,27 @@ npx chainwatch scan --quiet || exit 1
 | 🟡 MEDIUM | Suspicious — investigate further |
 | 🔵 LOW | Minor concern — informational |
 | ✅ CLEAN | No issues detected |
+
+## How It Works
+
+### Typosquatting Detection
+Compares package names against a database of popular packages using:
+- Levenshtein distance (edit distance)
+- Common typo patterns (missing/extra characters)
+- Homoglyph detection (visually similar characters)
+- Normalization (removing `-`, `_`, `.` for comparison)
+
+### Maintainer Analysis
+Checks registries (npm/PyPI) for:
+- Account creation date (< 30 days = suspicious)
+- Number of published packages
+- Release history patterns
+
+### Vulnerability Scanning
+Queries the [OSV (Open Source Vulnerabilities)](https://osv.dev/) API for:
+- Known CVEs in your dependency tree
+- Security advisories
+- Unpatched vulnerabilities
 
 ## Contributing
 
