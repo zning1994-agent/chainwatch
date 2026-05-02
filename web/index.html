@@ -8,16 +8,30 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'SF Mono', 'Fira Code', monospace; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
     
-    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
     
     header { text-align: center; margin-bottom: 40px; }
     h1 { font-size: 2.5em; color: #00d4ff; margin-bottom: 10px; }
     h1 span { color: #ff4444; }
     .subtitle { color: #666; font-size: 1.1em; }
     
+    .tabs {
+      display: flex; gap: 10px; margin: 30px 0; justify-content: center;
+    }
+    .tab {
+      padding: 10px 20px; background: #111; border: 1px solid #333;
+      border-radius: 6px; cursor: pointer; transition: all 0.2s;
+    }
+    .tab:hover { border-color: #00d4ff; }
+    .tab.active { background: #00d4ff; color: #000; border-color: #00d4ff; }
+    
+    .panel { display: none; }
+    .panel.active { display: block; }
+    
+    /* Scanner Panel */
     .upload-zone {
       border: 2px dashed #333; border-radius: 12px; padding: 40px; text-align: center;
-      margin: 30px 0; cursor: pointer; transition: all 0.3s;
+      margin: 20px 0; cursor: pointer; transition: all 0.3s;
     }
     .upload-zone:hover { border-color: #00d4ff; background: rgba(0,212,255,0.05); }
     .upload-zone.dragover { border-color: #00d4ff; background: rgba(0,212,255,0.1); }
@@ -31,7 +45,7 @@
       margin: 20px 0; padding: 20px; background: #111; border-radius: 8px; border: 1px solid #222;
     }
     textarea {
-      width: 100%; min-height: 150px; background: #0a0a0f; color: #e0e0e0; border: 1px solid #333;
+      width: 100%; min-height: 120px; background: #0a0a0f; color: #e0e0e0; border: 1px solid #333;
       border-radius: 6px; padding: 12px; font-family: inherit; font-size: 0.9em; resize: vertical;
     }
     textarea:focus { outline: none; border-color: #00d4ff; }
@@ -43,8 +57,16 @@
     }
     .btn:hover { background: #00b8e6; transform: translateY(-1px); }
     .btn:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: #333; color: #e0e0e0; }
+    .btn-secondary:hover { background: #444; }
     
-    .results { margin-top: 30px; }
+    /* Alerts Panel */
+    .alerts-header {
+      display: flex; justify-content: space-between; align-items: center; margin: 20px 0;
+    }
+    .last-scan { color: #666; font-size: 0.9em; }
+    .refresh-btn { padding: 8px 16px; background: #333; border: none; border-radius: 6px; color: #e0e0e0; cursor: pointer; }
+    .refresh-btn:hover { background: #444; }
     
     .stats {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0;
@@ -59,35 +81,47 @@
     .stat-card.low .number { color: #4488ff; }
     .stat-card.clean .number { color: #44ff44; }
     
-    .risk-list { margin: 20px 0; }
-    .risk-item {
+    .alert-list { margin: 20px 0; }
+    .alert-item {
       background: #111; border-radius: 8px; padding: 16px; margin: 10px 0;
       border-left: 4px solid #333;
     }
-    .risk-item.high { border-left-color: #ff4444; }
-    .risk-item.medium { border-left-color: #ffaa00; }
-    .risk-item.low { border-left-color: #4488ff; }
+    .alert-item.high { border-left-color: #ff4444; }
+    .alert-item.medium { border-left-color: #ffaa00; }
+    .alert-item.low { border-left-color: #4488ff; }
     
-    .risk-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .risk-badge {
+    .alert-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+    .alert-badge {
       padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; text-transform: uppercase;
     }
-    .risk-badge.high { background: #ff444433; color: #ff4444; }
-    .risk-badge.medium { background: #ffaa0033; color: #ffaa00; }
-    .risk-badge.low { background: #4488ff33; color: #4488ff; }
-    .risk-type { color: #888; font-size: 0.85em; }
-    .risk-package { font-weight: bold; color: #fff; }
-    .risk-message { color: #aaa; font-size: 0.9em; margin-top: 5px; }
-    .risk-details { color: #555; font-size: 0.8em; margin-top: 8px; padding: 8px; background: #0a0a0f; border-radius: 4px; }
+    .alert-badge.high { background: #ff444433; color: #ff4444; }
+    .alert-badge.medium { background: #ffaa0033; color: #ffaa00; }
+    .alert-badge.low { background: #4488ff33; color: #4488ff; }
+    .alert-type { color: #888; font-size: 0.85em; }
+    .alert-package { font-weight: bold; color: #fff; }
+    .alert-ecosystem { 
+      padding: 2px 6px; border-radius: 4px; font-size: 0.7em; 
+      background: #222; color: #888; 
+    }
+    .alert-message { color: #aaa; font-size: 0.9em; margin-top: 5px; }
+    .alert-meta { color: #555; font-size: 0.8em; margin-top: 8px; }
     
     .loading { text-align: center; padding: 40px; color: #00d4ff; }
     .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #333; border-top-color: #00d4ff; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     
+    .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+    .empty-icon { font-size: 4em; margin-bottom: 20px; }
+    
     footer { text-align: center; margin-top: 60px; padding: 20px; color: #444; font-size: 0.85em; }
     footer a { color: #00d4ff; text-decoration: none; }
     
     .hidden { display: none; }
+    
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      h1 { font-size: 1.8em; }
+    }
   </style>
 </head>
 <body>
@@ -97,31 +131,185 @@
       <p class="subtitle">Supply Chain Security Scanner</p>
     </header>
     
-    <div class="upload-zone" id="dropZone">
-      <div class="upload-icon">📦</div>
-      <p class="upload-text">Drop <strong>package.json</strong>, <strong>requirements.txt</strong>, or <strong>pyproject.toml</strong> here</p>
-      <p class="upload-text" style="margin-top:10px">or click to select file</p>
-      <input type="file" id="fileInput" accept=".json,.txt,.toml,.lock">
+    <div class="tabs">
+      <div class="tab active" onclick="showPanel('scanner')">📦 Scanner</div>
+      <div class="tab" onclick="showPanel('alerts')">🚨 Live Alerts</div>
+      <div class="tab" onclick="showPanel('about')">ℹ️ About</div>
     </div>
     
-    <div class="paste-zone">
-      <p style="margin-bottom:10px; color:#888">Or paste your dependencies:</p>
-      <textarea id="pasteInput" placeholder='{"dependencies": {"lodash": "^4.17.0", "express": "^4.18.0"}}'></textarea>
-      <button class="btn" onclick="scanPasted()">Scan Pasted</button>
+    <!-- Scanner Panel -->
+    <div id="scanner-panel" class="panel active">
+      <div class="upload-zone" id="dropZone">
+        <div class="upload-icon">📦</div>
+        <p class="upload-text">Drop <strong>package.json</strong>, <strong>requirements.txt</strong>, or <strong>pyproject.toml</strong> here</p>
+        <p class="upload-text" style="margin-top:10px">or click to select file</p>
+        <input type="file" id="fileInput" accept=".json,.txt,.toml,.lock">
+      </div>
+      
+      <div class="paste-zone">
+        <p style="margin-bottom:10px; color:#888">Or paste your dependencies:</p>
+        <textarea id="pasteInput" placeholder='{"dependencies": {"lodash": "^4.17.0", "express": "^4.18.0"}}'></textarea>
+        <button class="btn" onclick="scanPasted()">Scan Pasted</button>
+      </div>
+      
+      <div id="scan-results" class="hidden"></div>
     </div>
     
-    <div id="results" class="results hidden"></div>
+    <!-- Alerts Panel -->
+    <div id="alerts-panel" class="panel">
+      <div class="alerts-header">
+        <h2 style="color:#00d4ff">🚨 Supply Chain Threat Alerts</h2>
+        <button class="refresh-btn" onclick="loadAlerts()">🔄 Refresh</button>
+      </div>
+      <p class="last-scan" id="last-scan-time">Loading...</p>
+      
+      <div id="alerts-loading" class="loading">
+        <div class="spinner"></div>
+        <p style="margin-top:15px">Loading alerts...</p>
+      </div>
+      
+      <div id="alerts-content" class="hidden"></div>
+    </div>
+    
+    <!-- About Panel -->
+    <div id="about-panel" class="panel">
+      <div style="max-width:700px; margin:0 auto;">
+        <h2 style="color:#00d4ff; margin-bottom:20px">ℹ️ About ChainWatch</h2>
+        
+        <div style="background:#111; padding:20px; border-radius:8px; margin:15px 0; border:1px solid #222;">
+          <h3 style="color:#fff; margin-bottom:10px">🎯 What is ChainWatch?</h3>
+          <p style="color:#aaa; line-height:1.6;">
+            ChainWatch is an open-source supply chain security tool that detects typosquatting attacks, 
+            malicious packages, and suspicious dependencies in your projects.
+          </p>
+        </div>
+        
+        <div style="background:#111; padding:20px; border-radius:8px; margin:15px 0; border:1px solid #222;">
+          <h3 style="color:#fff; margin-bottom:10px">🔍 How it Works</h3>
+          <ul style="color:#aaa; line-height:1.8; padding-left:20px;">
+            <li><strong>Typosquatting Detection</strong> — Compares package names against popular packages using Levenshtein distance</li>
+            <li><strong>Malicious Package Database</strong> — Checks against known malicious packages</li>
+            <li><strong>Maintainer Analysis</strong> — Identifies packages from new/suspicious accounts</li>
+            <li><strong>Lockfile Analysis</strong> — Detects missing integrity hashes</li>
+          </ul>
+        </div>
+        
+        <div style="background:#111; padding:20px; border-radius:8px; margin:15px 0; border:1px solid #222;">
+          <h3 style="color:#fff; margin-bottom:10px">🚀 Quick Start</h3>
+          <pre style="background:#0a0a0f; padding:15px; border-radius:6px; overflow-x:auto; color:#00d4ff;">
+# Install globally
+npm install -g chainwatch
+
+# Scan your project
+chainwatch scan
+
+# Check a single package
+chainwatch check lodash</pre>
+        </div>
+        
+        <div style="background:#111; padding:20px; border-radius:8px; margin:15px 0; border:1px solid #222;">
+          <h3 style="color:#fff; margin-bottom:10px">🔗 Links</h3>
+          <ul style="color:#aaa; line-height:1.8; padding-left:20px;">
+            <li><a href="https://github.com/zning1994-agent/chainwatch" style="color:#00d4ff">GitHub Repository</a></li>
+            <li><a href="https://github.com/zning1994-agent/chainwatch/issues" style="color:#00d4ff">Report Issues</a></li>
+            <li><a href="https://github.com/zning1994-agent/chainwatch/blob/master/LICENSE" style="color:#00d4ff">MIT License</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
     
     <footer>
-      <p>ChainWatch v1.0.0 — <a href="https://github.com/zning1994-agent/chainwatch">GitHub</a></p>
+      <p>ChainWatch v1.1.0 — <a href="https://github.com/zning1994-agent/chainwatch">GitHub</a> — Daily scans powered by GitHub Actions</p>
     </footer>
   </div>
 
   <script>
+    // Tab switching
+    function showPanel(name) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(name + '-panel').classList.add('active');
+      event.target.classList.add('active');
+      
+      if (name === 'alerts') loadAlerts();
+    }
+    
+    // Load alerts from data/alerts.json
+    async function loadAlerts() {
+      const loading = document.getElementById('alerts-loading');
+      const content = document.getElementById('alerts-content');
+      const lastScan = document.getElementById('last-scan-time');
+      
+      loading.classList.remove('hidden');
+      content.classList.add('hidden');
+      
+      try {
+        const response = await fetch('data/alerts.json?' + Date.now());
+        const data = await response.json();
+        
+        lastScan.textContent = `Last scan: ${new Date(data.scanTime).toLocaleString()}`;
+        
+        let html = '';
+        
+        if (data.alerts && data.alerts.length > 0) {
+          // Stats
+          html += `
+            <div class="stats">
+              <div class="stat-card"><div class="number">${data.summary.total}</div><div class="label">Total Alerts</div></div>
+              <div class="stat-card high"><div class="number">${data.summary.high}</div><div class="label">High Risk</div></div>
+              <div class="stat-card medium"><div class="number">${data.summary.medium}</div><div class="label">Medium Risk</div></div>
+              <div class="stat-card low"><div class="number">${data.summary.low}</div><div class="label">Low Risk</div></div>
+            </div>
+          `;
+          
+          // Alert list
+          html += '<div class="alert-list">';
+          for (const alert of data.alerts) {
+            html += `
+              <div class="alert-item ${alert.level.toLowerCase()}">
+                <div class="alert-header">
+                  <span class="alert-badge ${alert.level.toLowerCase()}">${alert.level}</span>
+                  <span class="alert-type">${alert.type}</span>
+                  <span class="alert-package">${alert.package}</span>
+                  <span class="alert-ecosystem">${alert.ecosystem}</span>
+                </div>
+                <div class="alert-message">${alert.message}</div>
+                ${alert.version ? `<div class="alert-meta">Version: ${alert.version}</div>` : ''}
+                ${alert.publisher ? `<div class="alert-meta">Publisher: ${alert.publisher}</div>` : ''}
+              </div>
+            `;
+          }
+          html += '</div>';
+        } else {
+          html += `
+            <div class="empty-state">
+              <div class="empty-icon">✅</div>
+              <h3 style="color:#44ff44; margin-bottom:10px">All Clear!</h3>
+              <p>No supply chain threats detected in the latest scan.</p>
+            </div>
+          `;
+        }
+        
+        content.innerHTML = html;
+        content.classList.remove('hidden');
+      } catch (err) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚠️</div>
+            <h3 style="color:#ffaa00; margin-bottom:10px">Unable to Load Alerts</h3>
+            <p>Alerts data not available yet. The first scan runs daily at 08:00 UTC.</p>
+          </div>
+        `;
+        content.classList.remove('hidden');
+      }
+      
+      loading.classList.add('hidden');
+    }
+    
+    // File upload handling
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const pasteInput = document.getElementById('pasteInput');
-    const resultsDiv = document.getElementById('results');
     
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -129,8 +317,7 @@
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file) readFile(file);
+      if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener('change', (e) => {
       if (e.target.files[0]) readFile(e.target.files[0]);
@@ -138,10 +325,7 @@
     
     function readFile(file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target.result;
-        parseAndScan(content, file.name);
-      };
+      reader.onload = (e) => parseAndScan(e.target.result, file.name);
       reader.readAsText(file);
     }
     
@@ -154,7 +338,7 @@
     function parseAndScan(content, filename) {
       let deps = [];
       
-      if (filename.endsWith('.json')) {
+      if (filename.endsWith('.json') || filename === 'pasted') {
         try {
           const pkg = JSON.parse(content);
           const allDeps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
@@ -166,29 +350,19 @@
       } else if (filename.endsWith('.txt')) {
         deps = content.split('\n')
           .filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('-'))
-          .map(l => {
-            const m = l.match(/^([a-zA-Z0-9_.-]+)/);
-            return m ? { name: m[1], version: '*', source: 'pypi' } : null;
-          })
+          .map(l => { const m = l.match(/^([a-zA-Z0-9_.-]+)/); return m ? { name: m[1], version: '*', source: 'pypi' } : null; })
           .filter(Boolean);
-      } else {
-        alert('Unsupported file format. Use package.json or requirements.txt');
-        return;
       }
       
-      if (deps.length === 0) {
-        alert('No dependencies found');
-        return;
-      }
-      
-      showResults(deps, filename);
+      if (deps.length === 0) return alert('No dependencies found');
+      showScanResults(deps, filename);
     }
     
-    function showResults(deps, filename) {
+    function showScanResults(deps, filename) {
       const POPULAR_NPM = ['lodash','react','axios','express','vue','angular','webpack','babel','typescript','eslint','prettier','jest','moment','commander','debug','semver','uuid','colors','dotenv','cors','body-parser','morgan','helmet','multer','socket.io','mongoose','sequelize','next','nuxt','gatsby','svelte','jquery','d3','three','redux','tailwindcss','bootstrap','storybook','cypress','playwright','puppeteer','sharp','bcrypt','jsonwebtoken','passport','winston','pino','nodemailer','twilio','stripe','eslint','vite','rollup','prisma','typeorm','knex','graphql','fastify','electron'];
-      const POPULAR_PYPI = ['requests','flask','django','numpy','pandas','scipy','matplotlib','tensorflow','torch','keras','scikit-learn','pillow','beautifulsoup4','selenium','scrapy','fastapi','uvicorn','sqlalchemy','celery','redis','pymongo','psycopg2','boto3','pytest','black','flake8','pylint','mypy','ipython','jupyter','pyspark','airflow','pydantic','click','rich','cryptography','httpx','aiohttp','pyyaml','loguru','pyarrow','dask','polars','networkx','opencv-python','transformers','langchain','openai'];
+      const POPULAR_PYPI = ['requests','flask','django','numpy','pandas','scipy','matplotlib','tensorflow','torch','keras','scikit-learn','pillow','beautifulsoup4','selenium','scrapy','fastapi','uvicorn','sqlalchemy','celery','redis','pymongo','psycopg2','boto3','pytest','black','flake8','pylint','mypy','ipython','jupyter','pyspark','airflow','pydantic','click','rich','cryptography','httpx','aiohttp','pyyaml','loguru','pyarrow','dask','polars','networkx','opencv-python','transformers','langchain'];
       
-      const popular = deps[0].source === 'npm' ? POPULAR_NPM : POPULAR_PYPI;
+      const popular = deps[0]?.source === 'npm' ? POPULAR_NPM : POPULAR_PYPI;
       const risks = [];
       
       for (const dep of deps) {
@@ -200,24 +374,17 @@
           const maxLen = Math.max(name.length, pNorm.length);
           const sim = Math.round((1 - dist/maxLen) * 100);
           if (dist <= 2 && dist < maxLen * 0.4) {
-            risks.push({
-              level: sim > 85 ? 'HIGH' : 'MEDIUM',
-              type: 'typosquatting',
-              package: dep.name,
-              message: `Similar to "${p}" (${sim}% match, edit distance: ${dist})`,
-              details: { similarTo: p, similarity: sim }
-            });
+            risks.push({ level: sim > 85 ? 'HIGH' : 'MEDIUM', type: 'typosquatting', package: dep.name, message: `Similar to "${p}" (${sim}% match, edit distance: ${dist})` });
           }
         }
       }
       
       const high = risks.filter(r => r.level === 'HIGH').length;
       const medium = risks.filter(r => r.level === 'MEDIUM').length;
-      const low = risks.filter(r => r.level === 'LOW').length;
       const clean = deps.length - risks.length;
       
       let html = `
-        <h2 style="color:#00d4ff;margin-bottom:20px">📊 Scan Results: ${filename}</h2>
+        <h2 style="color:#00d4ff;margin:30px 0 20px">📊 Scan Results: ${filename}</h2>
         <div class="stats">
           <div class="stat-card"><div class="number">${deps.length}</div><div class="label">Total Deps</div></div>
           <div class="stat-card high"><div class="number">${high}</div><div class="label">High Risk</div></div>
@@ -227,17 +394,16 @@
       `;
       
       if (risks.length > 0) {
-        html += '<div class="risk-list">';
+        html += '<div class="alert-list">';
         for (const risk of risks) {
           html += `
-            <div class="risk-item ${risk.level.toLowerCase()}">
-              <div class="risk-header">
-                <span class="risk-badge ${risk.level.toLowerCase()}">${risk.level}</span>
-                <span class="risk-type">${risk.type}</span>
-                <span class="risk-package">${risk.package}</span>
+            <div class="alert-item ${risk.level.toLowerCase()}">
+              <div class="alert-header">
+                <span class="alert-badge ${risk.level.toLowerCase()}">${risk.level}</span>
+                <span class="alert-type">${risk.type}</span>
+                <span class="alert-package">${risk.package}</span>
               </div>
-              <div class="risk-message">${risk.message}</div>
-              ${risk.details ? `<div class="risk-details">${JSON.stringify(risk.details)}</div>` : ''}
+              <div class="alert-message">${risk.message}</div>
             </div>
           `;
         }
@@ -246,8 +412,8 @@
         html += '<div style="text-align:center;padding:30px;color:#44ff44;font-size:1.2em">✅ All dependencies clean!</div>';
       }
       
-      resultsDiv.innerHTML = html;
-      resultsDiv.classList.remove('hidden');
+      document.getElementById('scan-results').innerHTML = html;
+      document.getElementById('scan-results').classList.remove('hidden');
     }
     
     function levenshtein(a, b) {
@@ -259,6 +425,11 @@
         for (let j = 1; j <= n; j++)
           dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));
       return dp[m][n];
+    }
+    
+    // Load alerts on page load if alerts tab is active
+    if (document.getElementById('alerts-panel').classList.contains('active')) {
+      loadAlerts();
     }
   </script>
 </body>

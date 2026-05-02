@@ -1,0 +1,137 @@
+🔍 ChainWatch Supply Chain Security Scanner
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏰ Scan time: 2026-05-02T03:21:09.549Z
+
+🔍 Scanning npm registry...
+🔍 Scanning PyPI registry...
+🔍 Checking known malicious packages...
+{
+  "scanTime": "2026-05-02T03:21:12.368Z",
+  "summary": {
+    "total": 12,
+    "high": 11,
+    "medium": 1,
+    "low": 0
+  },
+  "alerts": [
+    {
+      "level": "MEDIUM",
+      "type": "typosquatting",
+      "package": "express",
+      "ecosystem": "npm",
+      "message": "Similar to \"cypress\" (71% match, edit distance: 2)",
+      "version": "5.2.1",
+      "publisher": "jonchurch",
+      "date": "2025-12-01T20:49:43.268Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "flatmap-stream",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Backdoor",
+      "reason": "Backdoor",
+      "date": "2026-05-02T03:21:09.776Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "crossenv",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Dependency confusion",
+      "reason": "Dependency confusion",
+      "date": "2026-05-02T03:21:09.842Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "mongose",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Typosquatting",
+      "reason": "Typosquatting",
+      "date": "2026-05-02T03:21:09.870Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "node-ipc",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Wiper malware",
+      "reason": "Wiper malware",
+      "date": "2026-05-02T03:21:09.952Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "peacenotwar",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Wiper malware",
+      "reason": "Wiper malware",
+      "date": "2026-05-02T03:21:09.975Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "ua-parser-js",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Crypto miner",
+      "reason": "Crypto miner",
+      "date": "2026-05-02T03:21:10.015Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "coa",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Ransomware",
+      "reason": "Ransomware",
+      "date": "2026-05-02T03:21:10.191Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "rc",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Ransomware",
+      "reason": "Ransomware",
+      "date": "2026-05-02T03:21:10.212Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "colors",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Protestware",
+      "reason": "Protestware",
+      "date": "2026-05-02T03:21:10.233Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "faker",
+      "ecosystem": "npm",
+      "message": "Known malicious package: Protestware",
+      "reason": "Protestware",
+      "date": "2026-05-02T03:21:10.250Z"
+    },
+    {
+      "level": "HIGH",
+      "type": "known_malicious",
+      "package": "requesocks",
+      "ecosystem": "pypi",
+      "message": "Known malicious package: Data exfiltration",
+      "reason": "Data exfiltration",
+      "date": "2026-05-02T03:21:10.271Z"
+    }
+  ],
+  "ecosystems": {
+    "npm": 1,
+    "pypi": 0
+  }
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Scan complete: 12 alerts found
+   🔴 HIGH: 11
+   🟡 MEDIUM: 1
+   🔵 LOW: 0
